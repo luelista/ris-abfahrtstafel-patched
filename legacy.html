@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta charset="utf8">
+    <style>
+      @font-face{font-family:db-screen-sans;font-weight:400;src:url(./static/media/DBScreenSans-Regular.056792ced64dcbd8c96a.woff2)}
+      @font-face{font-family:db-screen-sans;font-weight:700;src:url(./static/media/DBScreenSans-Bold.4cece8632250dffa23f8.woff2)}
+
+      html, body { margin: 0; padding: 0; font-family: db-screen-sans,sans-serif; background: #d7dce1; }
+      header { background: #131821; color: #ffffff; padding: 20px 15px; font-weight: bold; font-size: 1.5em; }
+      header time, h1 b { font-weight: bold; padding-right: 10px; }
+      h1, h2 { display: inline; font-weight: normal; font-size: 1em; margin: 0; }
+      h2 { float: right; }
+      main { margin: 15px; background: white; border-radius: 6px; }
+      main table { width: 100%; border-collapse: collapse; }
+      thead th { border-bottom: 1px solid #ddd; }
+      main table thead th { padding: 10px 15px; text-align: left; font-weight: normal; }
+      main table thead th div.en { color: #777; }
+      main table td { vertical-align: top; padding: 6px 15px 12px; }
+      .train { display: block; text-align: center; color: white; font-weight: bold; padding: 2px 15px; border-radius: 4px; font-size: 1.2em; background: #878c96; white-space: nowrap; }
+      .train.ice, .train.ece { background: #282d37; }
+      .train.ic, .train.ec, .train.rj { background: #646973; }
+      strike.train { background: white !important; border: 1px solid #282d37; color: #282d37; }
+      table tbody tr:nth-child(4n+1), table tbody tr:nth-child(4n+2) { background:rgb(240, 243, 245) }
+      main table tbody tr:nth-child(2n+1) td { padding: 12px 15px 0px; }
+      main table time { font-size: 1.5em; display: block; }
+      main table time.plan { font-weight: bold; }
+      main table strong { font-size: 1.5em; }
+      .green { color: #467a18; }
+      .red { color: #db0014; }
+    </style>
+    <script type="text/javascript">
+      window.configs = { 
+        "REACT_APP_DB_API_KEY":"3e2b49289f38c2fb8e8886d23fc0f830", 
+        "REACT_APP_QUERY_FOR_API":"https://apis.deutschebahn.com/db/apis/ris-boards/v1/public/departures/", 
+        "REACT_APP_DB_CLIENT_ID":"32f5e78c1dd72544b307665dea38b901", 
+        "REACT_APP_DB_RZ_CLIENT_ID":"73901447eb54ec32f62f0c08414b5da6", 
+        "REACT_APP_DB_RZ_API_KEY":"8ac43fb7c7fd178e3e96a37abdd27ac3", 
+      }
+      function EL(tagName, attrs) {
+        var el = document.createElement(tagName);
+        if (attrs) for(var key in attrs)
+          if (key === 'style' && typeof attrs[key] === 'object') Object.assign(el.style, attrs[key]);
+              else if (key === 'innerHTML') el.innerHTML = attrs[key];
+              else if (key === 'appendTo') (attrs.appendTo).append(el);
+              else if (key === 'prependTo' && attrs.prependTo instanceof HTMLElement) attrs.prependTo.prepend(el);
+              else if (key.startsWith("on")) el.addEventListener(key.substring(2), attrs[key], false);
+          else el.setAttribute(key, attrs[key]);
+        
+        for(var i=2;i<arguments.length;i++){
+          if (arguments[i] instanceof HTMLElement) el.appendChild(arguments[i]);
+          else if (arguments[i]) el.appendChild(document.createTextNode(""+arguments[i]));
+        }
+        return el;
+      }
+      setInterval(function() {
+        var time = new Date().toLocaleTimeString("de").substr(0,5);
+        if (new Date().getSeconds() % 2 == 0) //time = time.replace(":", " ");
+        time = time.replace(":", "<span style='visibility:hidden'>:</span>")
+        document.getElementById("currentTime").innerHTML = time;
+      }, 1000);
+
+      function update() {
+        var xhr = new XMLHttpRequest();
+        var timeEnd = new Date(+new Date() + 4*3600*1000).toISOString();
+        xhr.open('GET', window.configs.REACT_APP_QUERY_FOR_API + "8000244?filterTransports=HIGH_SPEED_TRAIN,INTERCITY_TRAIN,INTER_REGIONAL_TRAIN,REGIONAL_TRAIN&includeStationGroup=false&timeEnd="+timeEnd+"&maxViaStops=4&sortBy=TIME_SCHEDULE", true);
+        //xhr.open('GET', "demo.json", true);
+        xhr.setRequestHeader("DB-Api-Key", window.configs.REACT_APP_DB_API_KEY);
+        xhr.setRequestHeader("DB-Client-Id", window.configs.REACT_APP_DB_CLIENT_ID);
+        xhr.setRequestHeader("Accept", "application/vnd.de.db.ris+json");
+        xhr.onerror=function(e){
+          var target = document.getElementById('target');
+          target.prepend
+          alert("err"+e+" \n"+xhr.status+"\n"+xhr.response)
+        }
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState != 4) return;
+          var json = JSON.parse(xhr.responseText);
+          render(json);
+        };
+        xhr.send();
+      }
+      function render(json) {
+        var target = document.getElementById('target');
+        target.innerHTML = '';
+        for(var i = 0; i < json.departures.length; i++) {
+          var d = json.departures[i];
+          target.appendChild(EL('tr', {},
+            EL('td', {rowspan:'2'}, 
+              EL('time', {class:'plan'}, d.timeSchedule.substr(11, 5)),
+              EL('time', {class:'rt '+(d.time==d.timeSchedule ? 'green' : 'red')}, d.time.substr(11, 5))
+            ),
+            EL('td', {}, EL(d.canceled ? 'strike' : 'span', {class:'train '+d.transport.category.toLowerCase()},
+            d.transport.category + ' ' + (d.transport.line ? d.transport.line : d.transport.number))),
+            EL('td', {}, EL('strong', {}, d.transport.destination.name)),
+            EL('td', {rowspan:'2'}, EL('strong', {class:d.platform != d.platformSchedule ? 'red' : ''}, d.platform))
+          ));
+          target.appendChild(EL('tr', {},
+            EL('td', {colspan:'2'}, EL('span', {}, d.transport.via.map(function(x) { return x.name; }).join(', ') || '-'))
+          ));
+        }
+      }
+      window.onload = function() {
+        update();
+        setInterval(update, 60000);
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h2>Mannheim Hbf</h2>
+      <time id="currentTime">00:00</time>
+      
+      <h1><b>Abfahrten</b>  Departures</h1>
+    </header>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th width="70">
+              <div class="de">Zeit</div>
+              <div class="en">Time</div>
+            </th>
+            <th width="100">
+              <div class="de">Zug</div>
+              <div class="en">Train</div>
+            </th>
+            <th>
+              <div class="de">Nach</div>
+              <div class="en">To</div>
+            </th>
+            <th width="70">
+              <div class="de">Gleis</div>
+              <div class="en">Plat.</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="target">
+          <tr>
+            <td rowspan="2">
+            </td>
+            <td>
+            </td>
+            <td>
+              <strong>Eile mit Weile ...</strong>
+            </td>
+            <td rowspan="2">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>
