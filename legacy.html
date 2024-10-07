@@ -103,7 +103,7 @@
                 ? '' 
                 : EL('time', {class:d.timeType.toLowerCase()+' '+(isOnTime(d) ? 'green' : 'red')}, d.time.substr(11, 5))
             ),
-            EL('td', {}, EL('a', {href: 'https://bahn.expert/details/'+d.transport.category + ' ' + d.transport.number+'/'+d.timeSchedule+'?evaNumberAlongRoute='+station},
+            EL('td', {}, EL('a', {href: 'https://dbf.finalrewind.org/z/'+d.transport.category + ' ' + d.transport.number+'/'+station},
               EL(d.canceled ? 'strike' : 'span', {class:'train '+d.transport.category.toLowerCase()},
                   d.transport.category + ' ' + (d.transport.line ? d.transport.line : d.transport.number)))),
             EL('td', {}, EL('strong', {}, d.transport.destination.name)),
