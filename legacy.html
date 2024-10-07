@@ -3,6 +3,10 @@
   <head>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <link rel="manifest" href="manifest2.json" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Abfahrtstafel Mannheim</title>
+    <link rel="apple-touch-icon" href="logo192.png">
     <meta charset="utf8">
     <style>
       @font-face{font-family:db-screen-sans;font-weight:400;src:url(./static/media/DBScreenSans-Regular.056792ced64dcbd8c96a.woff2)}
@@ -72,8 +76,8 @@
         xhr.setRequestHeader("Accept", "application/vnd.de.db.ris+json");
         xhr.onerror=function(e){
           var target = document.getElementById('target');
-          target.prepend
-          alert("err"+e+" \n"+xhr.status+"\n"+xhr.response)
+          target.innerHTML="Unable to load <a href='"+window.configs.REACT_APP_QUERY_FOR_API+"'>"+window.configs.REACT_APP_QUERY_FOR_API+"</a>"
+          //alert("err"+e+" \n"+xhr.status+"\n"+xhr.response)
         }
         xhr.onreadystatechange = function() {
           if (xhr.readyState != 4) return;
