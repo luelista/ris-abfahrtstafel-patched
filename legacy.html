@@ -39,6 +39,8 @@
       html.dark body, html.dark main { background: black; color: #aaa; }
       html.dark thead th { border-bottom-color: black; }
       html.dark table tbody tr:nth-child(4n+1), html.dark table tbody tr:nth-child(4n+2) { background: #111 }
+      html.dark.off header { background: black; color: #777; }
+      html.dark.off header h1, html.dark.off header h2 { display: none; }
       #outOfDate { margin: 100px 0; text-align: center; color: #999; font-size: 70pt; }
     </style>
     <script type="text/javascript">
@@ -58,6 +60,7 @@
         darkModeEndHour: '7',
       };
       var lastSuccessfulUpdate = 0;
+      var switchedOff = false;
       var queryParams = (location.search
         ? location.search
              .substr(1)
@@ -87,11 +90,13 @@
         if (new Date().getSeconds() % 2 == 0) //time = time.replace(":", " ");
         time = time.replace(":", "<span style='visibility:hidden'>:</span>")
         document.getElementById("currentTime").innerHTML = time;
+        if (switchedOff) return;
         var dataOk = ((+new Date() - lastSuccessfulUpdate) > (parseInt(opts.refreshInterval) * 1000 * 5));
         document.getElementById('contents').style.display = dataOk ? 'none' : 'block';
         document.getElementById('outOfDate').style.display = dataOk ? 'block' : 'none';
       }, 1000);
       function update() {
+        if (switchedOff) return;
         var xhr = new XMLHttpRequest();
         var timeEnd = new Date(+new Date() + 2*3600*1000).toISOString();
         xhr.open('GET', window.configs.REACT_APP_QUERY_FOR_API + station + "?filterTransports=HIGH_SPEED_TRAIN,INTERCITY_TRAIN,INTER_REGIONAL_TRAIN,REGIONAL_TRAIN,CITY_TRAIN&includeStationGroup=false&timeEnd="+timeEnd+"&maxViaStops=4&sortBy=TIME_SCHEDULE", true);
@@ -150,10 +155,22 @@
         }
         document.body.parentElement.setAttribute('class', darkMode ? 'dark' : 'light');
       }
+      function switchOnOff() {
+        switchedOff = !switchedOff;
+        document.getElementById('contents').style.display = switchedOff ? 'none' : 'none';
+        document.getElementById('outOfDate').style.display = switchedOff ? 'none' : 'block';
+        if (!switchedOff) {
+          update();
+          checkDarkMode();
+        } else {
+          document.body.parentElement.setAttribute('class', 'off dark');
+        }
+      }
       window.onload = function() {
         update();
         setInterval(update, Math.max(parseInt(opts.refreshInterval) * 1000, 30000));
         document.getElementById('stationName').innerText = opts.stationName;
+        document.getElementById("currentTime").onclick = switchOnOff;
       }
     </script>
   </head>
