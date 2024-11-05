@@ -67,7 +67,7 @@
              .split('&')
              .map(function(s) { var i = s.indexOf('='); if (i != -1) return [s.substr(0, i), s.substr(i+1)]; else return [s, '']; }) 
         : []);
-      for(var i = 0; i < queryParams.length; i++) opts[queryParams[i][0]] = queryParams[i][1];
+      for(var i = 0; i < queryParams.length; i++) opts[queryParams[i][0]] = unescape(queryParams[i][1]);
       var station = opts.stationId;
       function EL(tagName, attrs) {
         var el = document.createElement(tagName);
