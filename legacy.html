@@ -36,6 +36,9 @@
       .green { color: #467a18; }
       .red { color: #db0014; }
       a { text-decoration: none; }
+      html.dark body, html.dark main { background: black; color: #aaa; }
+      html.dark thead th { border-bottom-color: black; }
+      html.dark table tbody tr:nth-child(4n+1), html.dark table tbody tr:nth-child(4n+2) { background: #111 }
     </style>
     <script type="text/javascript">
       window.configs = { 
@@ -45,7 +48,22 @@
         "REACT_APP_DB_RZ_CLIENT_ID":"73901447eb54ec32f62f0c08414b5da6", 
         "REACT_APP_DB_RZ_API_KEY":"8ac43fb7c7fd178e3e96a37abdd27ac3", 
       }
-      var station = '8000244';
+      var opts = {
+        stationText: "Mannheim Hbf",
+        stationId: '8000244',
+        refreshInterval: '60',
+        onTimeThresholdSecs: '120',
+        darkModeStartHour: '21',
+        darkModeEndHour: '7',
+      };
+      var queryParams = (location.search
+        ? location.search
+             .substr(1)
+             .split('&')
+             .map(function(s) { var i = s.indexOf('='); if (i != -1) return [s.substr(0, i), s.substr(i+1)]; else return [s, '']; }) 
+        : []);
+      for(var i = 0; i < queryParams.length; i++) opts[queryParams[i][0]] = queryParams[i][1];
+      var station = opts.stationId;
       function EL(tagName, attrs) {
         var el = document.createElement(tagName);
         if (attrs) for(var key in attrs)
@@ -89,7 +107,7 @@
       }
       function isOnTime(d) {
         var sched = new Date(d.timeSchedule), cur = new Date(d.time);
-        return (cur - sched) <= 120000;
+        return (cur - sched) <= (parseInt(opts.onTimeThresholdSecs) * 1000);
       }
       function render(json) {
         var target = document.getElementById('target');
@@ -113,16 +131,29 @@
             EL('td', {colspan:'2'}, EL('span', {}, d.transport.via.map(function(x) { return x.name; }).join(', ') || '-'))
           ));
         }
+        checkDarkMode();
+      }
+      function checkDarkMode() {
+        var start = parseInt(opts.darkModeStartHour), end = parseInt(opts.darkModeEndHour);
+        var darkMode = false;
+        var cur = new Date().getHours();
+        if (start > end) {
+          darkMode = cur >= start || cur < end;
+        } else if (start < end) {
+          darkMode = cur >= start && cur < end;
+        }
+        document.body.parentElement.setAttribute('class', darkMode ? 'dark' : 'light');
       }
       window.onload = function() {
         update();
-        setInterval(update, 60000);
+        setInterval(update, Math.max(parseInt(opts.refreshInterval) * 1000, 30000));
+        document.getElementById('stationName').innerText = opts.stationName;
       }
     </script>
   </head>
   <body>
     <header>
-      <h2>Mannheim Hbf</h2>
+      <h2 id="stationName">Mannheim Hbf</h2>
       <time id="currentTime">00:00</time>
       
       <h1><b>Abfahrten</b>  Departures</h1>
